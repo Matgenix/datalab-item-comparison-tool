@@ -1,0 +1,377 @@
+.datalab-tool-item-comparison.comparison-page {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.datalab-tool-item-comparison .comparison-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.datalab-tool-item-comparison .comparison-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.datalab-tool-item-comparison .comparison-item-select {
+  width: min(28rem, 100%);
+  min-width: 24rem;
+}
+
+.datalab-tool-item-comparison .comparison-loading {
+  min-height: 12rem;
+}
+
+.datalab-tool-item-comparison .comparison-empty {
+  border: 1px dashed #d0d5da;
+  border-radius: 0.5rem;
+  background: #fafbfc;
+}
+
+.datalab-tool-item-comparison .comparison-empty-icon {
+  margin-bottom: 0.75rem;
+  color: #6c757d;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.datalab-tool-item-comparison .comparison-card {
+  overflow: hidden;
+  border: 1px solid #e7eaee;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.datalab-tool-item-comparison .comparison-card.comparison-sticky-card {
+  overflow: visible;
+}
+
+.datalab-tool-item-comparison .comparison-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  border-bottom: 1px solid #e7eaee;
+  background: #f7f9fa;
+  font-weight: 600;
+}
+
+.datalab-tool-item-comparison .comparison-block-header {
+  display: block;
+}
+
+.datalab-tool-item-comparison .comparison-block-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.datalab-tool-item-comparison .comparison-sticky-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+}
+
+.datalab-tool-item-comparison .comparison-card-body {
+  padding: 1rem;
+}
+
+.datalab-tool-item-comparison .comparison-collapse-toggle {
+  padding: 0 0.5rem 0 0;
+  border: 0;
+  background: transparent;
+  color: #55606a;
+  cursor: pointer;
+}
+
+.datalab-tool-item-comparison .comparison-collapse-caret {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.datalab-tool-item-comparison .comparison-collapse-caret.collapsed {
+  transform: rotate(-90deg);
+}
+
+.datalab-tool-item-comparison .comparison-metadata-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.datalab-tool-item-comparison .comparison-type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.datalab-tool-item-comparison .comparison-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid #c8ced3;
+  border-radius: 1rem;
+  background: #fff;
+  color: #2c3e50;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.datalab-tool-item-comparison .comparison-type-pill.active {
+  border-color: #007bff;
+  background: #007bff;
+  color: #fff;
+}
+
+.datalab-tool-item-comparison .comparison-type-pill.partial:not(.active) {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.datalab-tool-item-comparison .comparison-pill-count {
+  padding: 0 0.4rem;
+  border-radius: 0.7rem;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 0.7rem;
+}
+
+.datalab-tool-item-comparison .comparison-type-pill.active .comparison-pill-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.datalab-tool-item-comparison .comparison-diff-count {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  margin-left: 0.3rem;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.datalab-tool-item-comparison .btn-outline-secondary .comparison-diff-count {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.datalab-tool-item-comparison .comparison-table {
+  width: 100%;
+  margin-bottom: 0;
+  table-layout: fixed;
+}
+
+.datalab-tool-item-comparison .comparison-table td,
+.datalab-tool-item-comparison .comparison-table th {
+  padding: 0.3rem 0.6rem;
+  overflow-wrap: anywhere;
+  border-color: #eef1f3;
+  vertical-align: top;
+}
+
+.datalab-tool-item-comparison .comparison-table tbody tr:nth-child(odd) td,
+.datalab-tool-item-comparison .comparison-table tbody tr:nth-child(odd) .comparison-field-column {
+  background-color: #fcfcfd;
+}
+
+.datalab-tool-item-comparison .comparison-table tbody tr.comparison-row-differs td {
+  background-color: #fff8e1;
+}
+
+.datalab-tool-item-comparison
+  .comparison-table
+  tbody
+  tr.comparison-row-differs
+  .comparison-field-column {
+  background-color: #fff3cd;
+  box-shadow: inset 3px 0 0 #f0ad4e;
+}
+
+.datalab-tool-item-comparison .comparison-field-column {
+  width: 11rem;
+  background-color: #f7f9fa;
+  color: #55606a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.datalab-tool-item-comparison .comparison-table thead .comparison-item-column {
+  border-top: 3px solid transparent;
+  background: #fff;
+}
+
+.datalab-tool-item-comparison .comparison-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.datalab-tool-item-comparison .comparison-item-heading > :nth-child(2) {
+  min-width: 0;
+  margin-right: auto;
+}
+
+.datalab-tool-item-comparison .comparison-pager {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.datalab-tool-item-comparison .comparison-pager-button {
+  padding: 0 0.35rem;
+  border: 0;
+  background: transparent;
+  color: #007bff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.datalab-tool-item-comparison .comparison-pager-button:disabled {
+  color: #c8ced3;
+  cursor: default;
+}
+
+.datalab-tool-item-comparison .comparison-sample-dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+}
+
+.datalab-tool-item-comparison .comparison-remove-button {
+  padding: 0;
+  margin-left: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  font-size: 1.2rem;
+  line-height: 1;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.datalab-tool-item-comparison .comparison-remove-button:hover {
+  opacity: 1;
+}
+
+.datalab-tool-item-comparison .comparison-block-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eef1f3;
+}
+
+.datalab-tool-item-comparison .comparison-block-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #c8ced3;
+  border-radius: 1rem;
+  background: #fff;
+  color: #2c3e50;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.datalab-tool-item-comparison .comparison-block-chip.inactive {
+  border-style: dashed;
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+.datalab-tool-item-comparison .comparison-block-chip.inactive .comparison-sample-dot {
+  filter: grayscale(1);
+}
+
+.datalab-tool-item-comparison .comparison-chip-detail {
+  max-width: 9rem;
+  margin-left: 0.35rem;
+  overflow: hidden;
+  color: #6c757d;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datalab-tool-item-comparison .comparison-file-label {
+  display: inline-block;
+  max-width: 14rem;
+  margin-left: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.datalab-tool-item-comparison .comparison-block-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.datalab-tool-item-comparison .comparison-block-cell {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid #e7eaee;
+  border-top: 3px solid #ccc;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.datalab-tool-item-comparison .comparison-block-cell-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.datalab-tool-item-comparison .comparison-media {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.datalab-tool-item-comparison .comparison-comment {
+  color: #2c3e50;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.datalab-tool-item-comparison .comparison-overlay {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .datalab-tool-item-comparison .comparison-item-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .datalab-tool-item-comparison .comparison-metadata-controls {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
+
+  .datalab-tool-item-comparison .comparison-block-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
