@@ -34,7 +34,7 @@
 		return "Unexpected response from datalab.";
 	}
 	var _sfc_main = {
-		name: "DatalabComparisonTool",
+		name: "ItemComparisonTool",
 		components: {
 			BokehPlot,
 			ChemicalFormula,

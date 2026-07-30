@@ -402,7 +402,7 @@ function errorMessage(error) {
 }
 
 export default {
-  name: "DatalabComparisonTool",
+  name: "ItemComparisonTool",
   components: {
     BokehPlot,
     ChemicalFormula,

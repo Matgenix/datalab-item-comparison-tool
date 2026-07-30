@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 
 import bokeh.embed
 import pandas as pd
 from flask import Blueprint, jsonify, request, send_from_directory
 from pydantic import BaseModel, ValidationError, validator
-from werkzeug.exceptions import BadRequest
-
 from pydatalab.apps import BLOCK_TYPES
 from pydatalab.blocks.base import DataBlock
 from pydatalab.bokeh_plots import DATALAB_BOKEH_THEME, selectable_axes_plot
@@ -21,6 +19,7 @@ from pydatalab.file_utils import get_file_info_by_id
 from pydatalab.logger import LOGGER
 from pydatalab.mongo import flask_mongo
 from pydatalab.permissions import get_default_permissions, read_only_permissions
+from werkzeug.exceptions import BadRequest
 
 TOOL_ID = "item-comparison"
 MAX_BLOCKS = 20
@@ -132,9 +131,7 @@ def _parse_request(model: type[PreviewRequest] | type[OverlayRequest]):
     try:
         return model.parse_obj(request.get_json(silent=True) or {})
     except ValidationError as exc:
-        raise BadRequest(
-            f"Invalid comparison request: {_validation_message(exc)}"
-        ) from None
+        raise BadRequest(f"Invalid comparison request: {_validation_message(exc)}") from None
 
 
 def _load_block(reference: BlockReference) -> LoadedBlock:
@@ -191,9 +188,7 @@ def _has_comparison_hook(block_class: type[DataBlock]) -> bool:
         try:
             return bool(supports())
         except Exception:
-            LOGGER.exception(
-                "Block %s failed its comparison capability check", block_class
-            )
+            LOGGER.exception("Block %s failed its comparison capability check", block_class)
             return False
     return True
 
@@ -253,16 +248,12 @@ def _coerce_comparison_data(data: Any) -> ComparisonData:
         if sublabel is not None and not isinstance(sublabel, str):
             raise ValueError("comparison series labels must be strings or null")
         if not isinstance(dataframe, pd.DataFrame) or dataframe.empty:
-            raise ValueError(
-                "comparison series must contain non-empty pandas dataframes"
-            )
+            raise ValueError("comparison series must contain non-empty pandas dataframes")
         normalized_series.append((sublabel, dataframe.copy()))
         total_points += len(dataframe)
 
     if total_points > MAX_DATA_POINTS:
-        raise ValueError(
-            f"comparison data may contain at most {MAX_DATA_POINTS:,} data points"
-        )
+        raise ValueError(f"comparison data may contain at most {MAX_DATA_POINTS:,} data points")
     if x_default not in x_options:
         raise ValueError("the default x-axis must be included in x_options")
     if y_options is not None and y_default not in y_options:
@@ -295,9 +286,7 @@ def _comparison_signature(data: ComparisonData) -> tuple[Any, ...]:
     )
 
 
-def _xrd_comparison_data(
-    loaded: LoadedBlock, block: DataBlock
-) -> ComparisonData | None:
+def _xrd_comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
     file_id = block.data.get("file_id")
     locations: list[tuple[str | None, str]] = []
     if file_id:
@@ -316,9 +305,7 @@ def _xrd_comparison_data(
             if file_info["name"].lower().endswith(accepted_extensions):
                 locations.append((file_info["name"], file_info["location"]))
                 if len(locations) > MAX_SERIES:
-                    raise BadRequest(
-                        f"An overlay may contain at most {MAX_SERIES} data series."
-                    )
+                    raise BadRequest(f"An overlay may contain at most {MAX_SERIES} data series.")
         if len(locations) == 1:
             locations[0] = (None, locations[0][1])
 
@@ -341,9 +328,7 @@ def _xrd_comparison_data(
     )
 
 
-def _raman_comparison_data(
-    loaded: LoadedBlock, block: DataBlock
-) -> ComparisonData | None:
+def _raman_comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
     file_id = block.data.get("file_id")
     if not file_id:
         return None
@@ -373,12 +358,8 @@ COMPARISON_ADAPTERS: dict[str, ComparisonAdapter] = {
 
 
 def _require_attached_file(loaded: LoadedBlock, file_id: Any) -> None:
-    if str(file_id) not in {
-        str(attached_file_id) for attached_file_id in loaded.item_file_ids
-    }:
-        raise BadRequest(
-            f"File {file_id!r} is not attached to item {loaded.reference.item_id!r}."
-        )
+    if str(file_id) not in {str(attached_file_id) for attached_file_id in loaded.item_file_ids}:
+        raise BadRequest(f"File {file_id!r} is not attached to item {loaded.reference.item_id!r}.")
 
 
 def _comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
@@ -486,9 +467,7 @@ def overlay():
     if not isinstance(block_type, str) or not _supports_overlay(
         block_type, loaded_blocks[0].block_class
     ):
-        raise BadRequest(
-            f"Overlay comparison is not supported for {block_type!r} blocks."
-        )
+        raise BadRequest(f"Overlay comparison is not supported for {block_type!r} blocks.")
 
     labelled_dataframes: dict[str, pd.DataFrame] = {}
     axis_signature = None
@@ -506,9 +485,7 @@ def overlay():
             if axis_signature is None:
                 axis_signature = signature
             elif signature != axis_signature:
-                raise BadRequest(
-                    "The selected blocks expose incompatible comparison axes."
-                )
+                raise BadRequest("The selected blocks expose incompatible comparison axes.")
             comparison = data
 
             base_label = loaded.reference.label or loaded.reference.item_id
@@ -522,9 +499,7 @@ def overlay():
                 labelled_dataframes[unique_label] = dataframe
                 total_points += len(dataframe)
                 if len(labelled_dataframes) > MAX_SERIES:
-                    raise BadRequest(
-                        f"An overlay may contain at most {MAX_SERIES} data series."
-                    )
+                    raise BadRequest(f"An overlay may contain at most {MAX_SERIES} data series.")
                 if total_points > MAX_DATA_POINTS:
                     raise BadRequest(
                         f"An overlay may contain at most {MAX_DATA_POINTS:,} data points."
@@ -533,9 +508,7 @@ def overlay():
         raise
     except Exception:
         LOGGER.exception("Unable to load %r block data for comparison", block_type)
-        raise BadRequest(
-            "The selected block data could not be prepared for overlay."
-        ) from None
+        raise BadRequest("The selected block data could not be prepared for overlay.") from None
 
     if comparison is None:
         raise BadRequest("No comparable data was found.")

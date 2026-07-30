@@ -1,0 +1,29 @@
+site_name: "datalab-item-comparison-tool"
+site_description: "Compare item metadata and data blocks across datalab items."
+site_url: "https://Matgenix.github.io/datalab-item-comparison-tool/"
+repo_name: "Matgenix/datalab-item-comparison-tool"
+repo_url: "https://github.com/Matgenix/datalab-item-comparison-tool"
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+
+nav:
+  - Home: index.md
+  - API reference: reference.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences

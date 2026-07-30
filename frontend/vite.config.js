@@ -8,7 +8,7 @@ export default {
     emptyOutDir: true,
     lib: {
       entry: fileURLToPath(new URL("./src/main.js", import.meta.url)),
-      name: "comparisonToolFrontend",
+      name: "item_comparisonToolFrontend",
       formats: ["iife"],
       fileName: () => "tool.js",
     },

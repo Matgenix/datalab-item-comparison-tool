@@ -1,6 +1,8 @@
-_commit: "None"
+_commit: null
 _src_path: "https://github.com/Matgenix/datalab-tool-plugin-template"
 distribution_name: "datalab-item-comparison-tool"
+repository_name: "datalab-item-comparison-tool"
+repository_namespace: "Matgenix"
 tool_id: "item-comparison"
 tool_name: "Item comparison"
 tool_ui_kind: "in-app"
@@ -14,3 +16,6 @@ item_table_action_max_items: 20
 description: "Compare item metadata and data blocks across datalab items."
 author_name: "datalab development team"
 author_email: "dev@datalab-org.io"
+copyright_holder: "Matgenix"
+copyright_year: 2026
+conduct_contact: "dev@datalab-org.io"

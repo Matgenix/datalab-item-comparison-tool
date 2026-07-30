@@ -7,6 +7,7 @@ from pydatalab.tools import (
     ToolProvider,
 )
 
+from ._version import __version__
 from .comparison import TOOL_BLUEPRINT, TOOL_ID
 
 
@@ -17,7 +18,7 @@ class ItemComparisonToolProvider(ToolProvider):
     metadata = ToolMetadata(
         name="Item comparison",
         description="Compare item metadata and data blocks across datalab items.",
-        version="0.1.0",
+        version=__version__,
         icon="vials",
         ui=InAppToolUI(),
         launch_actions=(
