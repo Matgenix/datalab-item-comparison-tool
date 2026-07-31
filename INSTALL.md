@@ -31,11 +31,12 @@ Add the plugin to the datalab checkout's root `plugins.toml`:
 dependencies = ["datalab-item-comparison-tool"]
 
 [tool.uv.sources]
-datalab-item-comparison-tool = { path = "dev-repos/datalab-item-comparison-tool", editable = true }
+datalab-item-comparison-tool = { git = "https://github.com/Matgenix/datalab-item-comparison-tool.git" }
 ```
 
 Preserve existing dependencies and source entries when merging this
-configuration. Then install the configured plugins:
+configuration. Pin a release tag or commit for reproducible deployments. Then
+install the configured plugins:
 
 ```shell
 cd pydatalab
@@ -47,33 +48,17 @@ Restart the datalab API after installation so it discovers the
 
 ## Docker Compose development installation
 
-The API image installs local plugins from the ignored `pydatalab/plugins/`
-staging directory. From the datalab repository root:
-
-```shell
-mkdir -p pydatalab/plugins/item_comparison_tool
-rsync -a \
-  --exclude frontend/node_modules/ \
-  --exclude .venv/ \
-  --exclude build/ \
-  --exclude dist/ \
-  --exclude __pycache__/ \
-  --exclude '*.egg-info/' \
-  --exclude '*.py[cod]' \
-  dev-repos/datalab-item-comparison-tool/ \
-  pydatalab/plugins/item_comparison_tool/
-```
-
-Use the staged path in the root `plugins.toml`:
+Use the same Git source in the datalab repository's root `plugins.toml`:
 
 ```toml
 dependencies = ["datalab-item-comparison-tool"]
 
 [tool.uv.sources]
-datalab-item-comparison-tool = { path = "pydatalab/plugins/item_comparison_tool" }
+datalab-item-comparison-tool = { git = "https://github.com/Matgenix/datalab-item-comparison-tool.git" }
 ```
 
-Then rebuild the development stack:
+The API image resolves and installs the plugin while it is built. Rebuild the
+development stack:
 
 ```shell
 docker compose --profile dev up --build
