@@ -11,7 +11,7 @@ from typing import Any
 import bokeh.embed
 import pandas as pd
 from flask import Blueprint, jsonify, request, send_from_directory
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from pydatalab.apps import BLOCK_TYPES
 from pydatalab.blocks.base import DataBlock
 from pydatalab.bokeh_plots import DATALAB_BOKEH_THEME, selectable_axes_plot
@@ -33,18 +33,22 @@ FRONTEND_DIRECTORY = Path(__file__).parent / "static" / "frontend"
 class BlockReference(BaseModel):
     """A current-user reference to one block on one item."""
 
+    model_config = ConfigDict(extra="forbid")
+
     item_id: str
     block_id: str
     label: str | None = None
 
-    @validator("item_id", "block_id")
+    @field_validator("item_id", "block_id")
+    @classmethod
     def validate_identifier(cls, value: str) -> str:
         value = value.strip()
         if not value or len(value) > 256:
             raise ValueError("item and block identifiers must contain 1–256 characters")
         return value
 
-    @validator("label")
+    @field_validator("label")
+    @classmethod
     def validate_label(cls, value: str | None) -> str | None:
         if value is None:
             return None
@@ -53,40 +57,37 @@ class BlockReference(BaseModel):
             raise ValueError("labels must contain 1–200 characters")
         return value
 
-    class Config:
-        extra = "forbid"
-
 
 class PreviewRequest(BaseModel):
     """A bounded request for permission-checked block previews."""
 
+    model_config = ConfigDict(extra="forbid")
+
     blocks: list[BlockReference]
 
-    @validator("blocks")
+    @field_validator("blocks")
+    @classmethod
     def validate_blocks(cls, value: list[BlockReference]) -> list[BlockReference]:
         if not 1 <= len(value) <= MAX_BLOCKS:
             raise ValueError(f"preview requests must contain 1–{MAX_BLOCKS} blocks")
         _reject_duplicate_references(value)
         return value
 
-    class Config:
-        extra = "forbid"
-
 
 class OverlayRequest(BaseModel):
     """A bounded request for a same-type block overlay."""
 
+    model_config = ConfigDict(extra="forbid")
+
     blocks: list[BlockReference]
 
-    @validator("blocks")
+    @field_validator("blocks")
+    @classmethod
     def validate_blocks(cls, value: list[BlockReference]) -> list[BlockReference]:
         if not 2 <= len(value) <= MAX_BLOCKS:
             raise ValueError(f"overlay requests must contain 2–{MAX_BLOCKS} blocks")
         _reject_duplicate_references(value)
         return value
-
-    class Config:
-        extra = "forbid"
 
 
 @dataclass(frozen=True)
@@ -129,7 +130,7 @@ def _validation_message(error: ValidationError) -> str:
 
 def _parse_request(model: type[PreviewRequest] | type[OverlayRequest]):
     try:
-        return model.parse_obj(request.get_json(silent=True) or {})
+        return model.model_validate(request.get_json(silent=True) or {})
     except ValidationError as exc:
         raise BadRequest(f"Invalid comparison request: {_validation_message(exc)}") from None
 

@@ -635,7 +635,7 @@
 		const _component_ChemicalFormula = (0, vue.resolveComponent)("ChemicalFormula");
 		const _component_BokehPlot = (0, vue.resolveComponent)("BokehPlot");
 		return (0, vue.openBlock)(), (0, vue.createElementBlock)("section", _hoisted_1, [
-			(0, vue.createElementVNode)("header", _hoisted_2, [(0, vue.createElementVNode)("div", _hoisted_3, [_cache[10] || (_cache[10] = (0, vue.createElementVNode)("h1", { class: "h3 mb-0" }, "Item comparison", -1)), $options.items.length ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("span", _hoisted_4, (0, vue.toDisplayString)($options.items.length), 1)) : (0, vue.createCommentVNode)("", true)]), (0, vue.createElementVNode)("div", _hoisted_5, [(0, vue.createVNode)(_component_ItemSelect, {
+			(0, vue.createElementVNode)("header", _hoisted_2, [(0, vue.createElementVNode)("div", _hoisted_3, [_cache[10] || (_cache[10] = (0, vue.createElementVNode)("h1", { class: "h3 mb-0" }, " Item comparison ", -1)), $options.items.length ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("span", _hoisted_4, (0, vue.toDisplayString)($options.items.length), 1)) : (0, vue.createCommentVNode)("", true)]), (0, vue.createElementVNode)("div", _hoisted_5, [(0, vue.createVNode)(_component_ItemSelect, {
 				modelValue: $data.itemToAdd,
 				"onUpdate:modelValue": [_cache[0] || (_cache[0] = ($event) => $data.itemToAdd = $event), $options.onAddItem],
 				"types-to-query": $data.itemTypes,
@@ -647,7 +647,7 @@
 			])])]),
 			$options.requestedItemRefcodes.length > $data.maxItems ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_6, " A comparison can contain at most " + (0, vue.toDisplayString)($data.maxItems) + " items. Only the first " + (0, vue.toDisplayString)($data.maxItems) + " refcodes in this link are shown. ", 1)) : (0, vue.createCommentVNode)("", true),
 			$data.capabilitiesError ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_7, " Block names and overlay availability could not be loaded. Side-by-side previews remain available. ")) : (0, vue.createCommentVNode)("", true),
-			$options.loadFailures.length ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_8, [_cache[11] || (_cache[11] = (0, vue.createElementVNode)("p", { class: "mb-1" }, "Some requested items could not be loaded:", -1)), (0, vue.createElementVNode)("ul", _hoisted_9, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)($options.loadFailures, (failure) => {
+			$options.loadFailures.length ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_8, [_cache[11] || (_cache[11] = (0, vue.createElementVNode)("p", { class: "mb-1" }, " Some requested items could not be loaded: ", -1)), (0, vue.createElementVNode)("ul", _hoisted_9, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)($options.loadFailures, (failure) => {
 				return (0, vue.openBlock)(), (0, vue.createElementBlock)("li", { key: failure.id }, [
 					(0, vue.createElementVNode)("code", null, (0, vue.toDisplayString)(failure.id), 1),
 					(0, vue.createTextVNode)(": " + (0, vue.toDisplayString)(failure.message) + " ", 1),
@@ -662,12 +662,12 @@
 			$data.loading ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_11, [..._cache[12] || (_cache[12] = [(0, vue.createElementVNode)("span", {
 				class: "spinner-border text-primary mb-3",
 				"aria-hidden": "true"
-			}, null, -1), (0, vue.createElementVNode)("p", { class: "mb-0" }, "Loading items...", -1)])])) : $options.items.length < 1 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_12, [..._cache[13] || (_cache[13] = [
+			}, null, -1), (0, vue.createElementVNode)("p", { class: "mb-0" }, " Loading items... ", -1)])])) : $options.items.length < 1 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_12, [..._cache[13] || (_cache[13] = [
 				(0, vue.createElementVNode)("div", {
 					class: "comparison-empty-icon",
 					"aria-hidden": "true"
-				}, "▦", -1),
-				(0, vue.createElementVNode)("h2", { class: "h5" }, "Nothing to compare yet", -1),
+				}, " ▦ ", -1),
+				(0, vue.createElementVNode)("h2", { class: "h5" }, " Nothing to compare yet ", -1),
 				(0, vue.createElementVNode)("p", { class: "text-muted mb-0" }, " Use the search box above to add items. Their refcodes will remain in the page URL, so the comparison can be bookmarked or shared with another authorized user. ", -1)
 			])])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, { key: 5 }, [(0, vue.createElementVNode)("section", _hoisted_13, [(0, vue.createElementVNode)("header", _hoisted_14, [
 				(0, vue.createElementVNode)("button", {
@@ -705,7 +705,7 @@
 					class: (0, vue.normalizeClass)(["btn", $data.showDiffOnly ? "btn-outline-secondary" : "btn-primary"]),
 					onClick: _cache[5] || (_cache[5] = ($event) => $data.showDiffOnly = false)
 				}, " All fields ", 2)])])
-			]), (0, vue.withDirectives)((0, vue.createElementVNode)("div", _hoisted_22, [(0, vue.createElementVNode)("table", _hoisted_23, [(0, vue.createElementVNode)("thead", null, [(0, vue.createElementVNode)("tr", null, [_cache[16] || (_cache[16] = (0, vue.createElementVNode)("th", { class: "comparison-field-column" }, "Field", -1)), ((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)($options.pagedItems, (entry) => {
+			]), (0, vue.withDirectives)((0, vue.createElementVNode)("div", _hoisted_22, [(0, vue.createElementVNode)("table", _hoisted_23, [(0, vue.createElementVNode)("thead", null, [(0, vue.createElementVNode)("tr", null, [_cache[16] || (_cache[16] = (0, vue.createElementVNode)("th", { class: "comparison-field-column" }, " Field ", -1)), ((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)($options.pagedItems, (entry) => {
 				return (0, vue.openBlock)(), (0, vue.createElementBlock)("th", {
 					key: entry.item.item_id,
 					class: "comparison-item-column",

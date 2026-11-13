@@ -2,8 +2,13 @@
   <section class="datalab-tool-item-comparison comparison-page px-3 px-xl-5 py-3">
     <header class="comparison-page-header mb-4">
       <div class="comparison-title">
-        <h1 class="h3 mb-0">Item comparison</h1>
-        <span v-if="items.length" class="badge badge-pill badge-secondary">
+        <h1 class="h3 mb-0">
+          Item comparison
+        </h1>
+        <span
+          v-if="items.length"
+          class="badge badge-pill badge-secondary"
+        >
           {{ items.length }}
         </span>
       </div>
@@ -17,22 +22,35 @@
       </div>
     </header>
 
-    <div v-if="requestedItemRefcodes.length > maxItems" class="alert alert-warning">
+    <div
+      v-if="requestedItemRefcodes.length > maxItems"
+      class="alert alert-warning"
+    >
       A comparison can contain at most {{ maxItems }} items. Only the first {{ maxItems }} refcodes
       in this link are shown.
     </div>
 
-    <div v-if="capabilitiesError" class="alert alert-warning">
+    <div
+      v-if="capabilitiesError"
+      class="alert alert-warning"
+    >
       Block names and overlay availability could not be loaded. Side-by-side previews remain
       available.
     </div>
 
-    <div v-if="loadFailures.length" class="alert alert-warning">
-      <p class="mb-1">Some requested items could not be loaded:</p>
+    <div
+      v-if="loadFailures.length"
+      class="alert alert-warning"
+    >
+      <p class="mb-1">
+        Some requested items could not be loaded:
+      </p>
       <ul class="mb-0">
-        <li v-for="failure in loadFailures" :key="failure.id">
-          <code>{{ failure.id }}</code
-          >: {{ failure.message }}
+        <li
+          v-for="failure in loadFailures"
+          :key="failure.id"
+        >
+          <code>{{ failure.id }}</code>: {{ failure.message }}
           <button
             type="button"
             class="btn btn-link btn-sm py-0"
@@ -45,14 +63,33 @@
       </ul>
     </div>
 
-    <div v-if="loading" class="comparison-loading text-center text-muted py-5" role="status">
-      <span class="spinner-border text-primary mb-3" aria-hidden="true"></span>
-      <p class="mb-0">Loading items...</p>
+    <div
+      v-if="loading"
+      class="comparison-loading text-center text-muted py-5"
+      role="status"
+    >
+      <span
+        class="spinner-border text-primary mb-3"
+        aria-hidden="true"
+      />
+      <p class="mb-0">
+        Loading items...
+      </p>
     </div>
 
-    <div v-else-if="items.length < 1" class="comparison-empty text-center py-5">
-      <div class="comparison-empty-icon" aria-hidden="true">▦</div>
-      <h2 class="h5">Nothing to compare yet</h2>
+    <div
+      v-else-if="items.length < 1"
+      class="comparison-empty text-center py-5"
+    >
+      <div
+        class="comparison-empty-icon"
+        aria-hidden="true"
+      >
+        ▦
+      </div>
+      <h2 class="h5">
+        Nothing to compare yet
+      </h2>
       <p class="text-muted mb-0">
         Use the search box above to add items. Their refcodes will remain in the page URL, so the
         comparison can be bookmarked or shared with another authorized user.
@@ -78,7 +115,10 @@
           </button>
           <span class="mr-auto">Metadata</span>
           <div class="comparison-metadata-controls">
-            <div v-if="totalPages > 1" class="comparison-pager">
+            <div
+              v-if="totalPages > 1"
+              class="comparison-pager"
+            >
               <button
                 type="button"
                 class="comparison-pager-button"
@@ -99,7 +139,11 @@
                 ›
               </button>
             </div>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Metadata fields">
+            <div
+              class="btn-group btn-group-sm"
+              role="group"
+              aria-label="Metadata fields"
+            >
               <button
                 type="button"
                 class="btn"
@@ -107,7 +151,10 @@
                 @click="showDiffOnly = true"
               >
                 Differences
-                <span v-if="hiddenIdenticalCount" class="comparison-diff-count">
+                <span
+                  v-if="hiddenIdenticalCount"
+                  class="comparison-diff-count"
+                >
                   {{ displayedMetadataRows.length }}
                 </span>
               </button>
@@ -123,11 +170,16 @@
           </div>
         </header>
 
-        <div v-show="!metadataCollapsed" class="table-responsive">
+        <div
+          v-show="!metadataCollapsed"
+          class="table-responsive"
+        >
           <table class="table comparison-table mb-0">
             <thead>
               <tr>
-                <th class="comparison-field-column">Field</th>
+                <th class="comparison-field-column">
+                  Field
+                </th>
                 <th
                   v-for="entry in pagedItems"
                   :key="entry.item.item_id"
@@ -138,7 +190,7 @@
                     <span
                       class="comparison-sample-dot"
                       :style="{ backgroundColor: sampleColor(entry.index) }"
-                    ></span>
+                    />
                     <FormattedItemName
                       :item_id="entry.item.item_id"
                       :item-type="entry.item.type || 'samples'"
@@ -165,19 +217,30 @@
                 :key="field.key"
                 :class="{ 'comparison-row-differs': !showDiffOnly && fieldDiffers(field) }"
               >
-                <th class="comparison-field-column">{{ field.label }}</th>
-                <td v-for="entry in pagedItems" :key="entry.item.item_id">
+                <th class="comparison-field-column">
+                  {{ field.label }}
+                </th>
+                <td
+                  v-for="entry in pagedItems"
+                  :key="entry.item.item_id"
+                >
                   <ChemicalFormula
                     v-if="field.key === 'chemform' && entry.item.chemform"
                     :formula="entry.item.chemform"
                   />
-                  <span v-else :class="{ 'text-muted': field.render(entry.item) === '—' }">
+                  <span
+                    v-else
+                    :class="{ 'text-muted': field.render(entry.item) === '—' }"
+                  >
                     {{ field.render(entry.item) }}
                   </span>
                 </td>
               </tr>
               <tr v-if="!displayedMetadataRows.length">
-                <td :colspan="pagedItems.length + 1" class="text-muted text-center py-3">
+                <td
+                  :colspan="pagedItems.length + 1"
+                  class="text-muted text-center py-3"
+                >
                   These items share the same displayed metadata.
                   <button
                     type="button"
@@ -237,7 +300,10 @@
             </div>
           </div>
 
-          <div v-if="blockTypeStats.length && !blocksCollapsed" class="comparison-type-pills mt-2">
+          <div
+            v-if="blockTypeStats.length && !blocksCollapsed"
+            class="comparison-type-pills mt-2"
+          >
             <button
               v-for="blockType in blockTypeStats"
               :key="blockType.id"
@@ -256,13 +322,22 @@
           </div>
         </header>
 
-        <div v-show="!blocksCollapsed" class="comparison-card-body">
-          <div v-if="!blockTypeStats.length" class="text-muted text-center py-4">
+        <div
+          v-show="!blocksCollapsed"
+          class="comparison-card-body"
+        >
+          <div
+            v-if="!blockTypeStats.length"
+            class="text-muted text-center py-4"
+          >
             None of the selected items contain data blocks.
           </div>
 
           <template v-else>
-            <div v-if="matchingBlocks.length > 1" class="comparison-block-toggles">
+            <div
+              v-if="matchingBlocks.length > 1"
+              class="comparison-block-toggles"
+            >
               <span class="small text-muted">Blocks:</span>
               <button
                 v-for="entry in matchingBlocks"
@@ -277,19 +352,29 @@
                 <span
                   class="comparison-sample-dot"
                   :style="{ backgroundColor: entry.color }"
-                ></span>
+                />
                 {{ entry.chipLabel }}
-                <span v-if="entry.distinguisher" class="comparison-chip-detail">
+                <span
+                  v-if="entry.distinguisher"
+                  class="comparison-chip-detail"
+                >
                   {{ entry.distinguisher }}
                 </span>
               </button>
             </div>
 
             <div v-if="mode === 'side-by-side'">
-              <div v-if="!activeBlocks.length" class="text-muted text-center py-4">
+              <div
+                v-if="!activeBlocks.length"
+                class="text-muted text-center py-4"
+              >
                 Enable at least one block above.
               </div>
-              <div v-else class="comparison-block-grid" :style="gridStyle">
+              <div
+                v-else
+                class="comparison-block-grid"
+                :style="gridStyle"
+              >
                 <article
                   v-for="entry in activeBlocks"
                   :key="entry.key"
@@ -300,7 +385,7 @@
                     <span
                       class="comparison-sample-dot"
                       :style="{ backgroundColor: entry.color }"
-                    ></span>
+                    />
                     <FormattedItemName
                       :item_id="entry.itemId"
                       :item-type="entry.itemType"
@@ -317,8 +402,13 @@
                     </span>
                   </header>
 
-                  <div v-if="entry.error" class="alert alert-danger small mb-0">
-                    <p class="mb-2">{{ entry.error }}</p>
+                  <div
+                    v-if="entry.error"
+                    class="alert alert-danger small mb-0"
+                  >
+                    <p class="mb-2">
+                      {{ entry.error }}
+                    </p>
                     <button
                       type="button"
                       class="btn btn-outline-danger btn-sm"
@@ -327,8 +417,15 @@
                       Retry
                     </button>
                   </div>
-                  <div v-else-if="entry.loading" class="text-muted text-center py-4" role="status">
-                    <span class="spinner-border spinner-border-sm mr-2" aria-hidden="true"></span>
+                  <div
+                    v-else-if="entry.loading"
+                    class="text-muted text-center py-4"
+                    role="status"
+                  >
+                    <span
+                      class="spinner-border spinner-border-sm mr-2"
+                      aria-hidden="true"
+                    />
                     Generating preview...
                   </div>
                   <BokehPlot
@@ -340,11 +437,17 @@
                     :src="entry.imageData"
                     :alt="entry.fileLabel || 'Block media'"
                     class="comparison-media"
-                  />
-                  <div v-else-if="entry.comment" class="comparison-comment">
+                  >
+                  <div
+                    v-else-if="entry.comment"
+                    class="comparison-comment"
+                  >
                     {{ entry.comment }}
                   </div>
-                  <div v-else class="text-muted small py-3 text-center">
+                  <div
+                    v-else
+                    class="text-muted small py-3 text-center"
+                  >
                     No preview is available for this block type.
                   </div>
                 </article>
@@ -352,18 +455,34 @@
             </div>
 
             <div v-else>
-              <div v-if="!overlaySupported" class="alert alert-info mb-0">
+              <div
+                v-if="!overlaySupported"
+                class="alert alert-info mb-0"
+              >
                 Overlay is not supported for {{ blockTypeName(selectedBlockType) }} blocks. Use
                 side-by-side mode instead.
               </div>
-              <div v-else-if="overlayError" class="alert alert-danger mb-0">
+              <div
+                v-else-if="overlayError"
+                class="alert alert-danger mb-0"
+              >
                 {{ overlayError }}
               </div>
-              <div v-else-if="overlayLoading" class="text-muted text-center py-4" role="status">
-                <span class="spinner-border spinner-border-sm mr-2" aria-hidden="true"></span>
+              <div
+                v-else-if="overlayLoading"
+                class="text-muted text-center py-4"
+                role="status"
+              >
+                <span
+                  class="spinner-border spinner-border-sm mr-2"
+                  aria-hidden="true"
+                />
                 Building overlay...
               </div>
-              <div v-else-if="overlayPlotData" class="comparison-overlay">
+              <div
+                v-else-if="overlayPlotData"
+                class="comparison-overlay"
+              >
                 <BokehPlot :bokeh-plot-data="overlayPlotData" />
               </div>
             </div>
