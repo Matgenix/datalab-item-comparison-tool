@@ -11,7 +11,9 @@ theme:
     - navigation.sections
 
 nav:
-  - Home: index.md
+  - User guide: index.md
+  - Operations: operations.md
+  - Development: development.md
   - API reference: reference.md
 
 plugins:
