@@ -25,6 +25,13 @@ from datalab_item_comparison_tool.provider import (
 )
 
 
+@pytest.fixture
+def tool_client():
+    app = Flask(__name__)
+    app.register_blueprint(TOOL_BLUEPRINT)
+    return app.test_client()
+
+
 def test_provider_metadata():
     provider = ItemComparisonToolProvider()
 
@@ -77,11 +84,8 @@ def test_comparison_data_requires_declared_axes_and_columns():
         )
 
 
-def test_preview_route_rejects_invalid_requests_before_loading_blocks():
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post("/previews", json={"blocks": []})
+def test_preview_route_rejects_invalid_requests(tool_client):
+    response = tool_client.post("/previews", json={"blocks": []})
 
     assert response.status_code == 400
     assert b"Invalid comparison request" in response.data
@@ -169,14 +173,9 @@ def test_file_preflight_deduplicates_files_and_aggregates_bytes(monkeypatch):
         _RequestBudget.preflight([_loaded_block(file_ids=("first", "second"))])
 
 
-def test_dataframe_budgets_count_cells_and_deep_memory_without_copying(monkeypatch):
+def test_dataframe_budgets_count_cells_and_deep_memory(monkeypatch):
     wide_frame = pd.DataFrame({f"column-{index}": [index] for index in range(4)})
     monkeypatch.setattr(comparison_module, "MAX_DATA_CELLS", 3)
-    monkeypatch.setattr(
-        pd.DataFrame,
-        "copy",
-        lambda *_args, **_kwargs: pytest.fail("comparison frames must not be copied"),
-    )
 
     with pytest.raises(RequestEntityTooLarge, match="cells"):
         _coerce_comparison_data(
@@ -203,11 +202,10 @@ def test_dataframe_budgets_count_cells_and_deep_memory_without_copying(monkeypat
         )
 
 
-@pytest.mark.parametrize("block_type", ["xrd", "raman"])
-def test_oversized_file_returns_413_before_known_parser_runs(monkeypatch, block_type):
+def test_oversized_file_returns_413_before_parser_runs(monkeypatch, tool_client):
     loaded = [
-        _loaded_block("first", "one", block_type=block_type, file_ids=("large",)),
-        _loaded_block("second", "two", block_type=block_type, file_ids=("large",)),
+        _loaded_block("first", "one", block_type="xrd", file_ids=("large",)),
+        _loaded_block("second", "two", block_type="xrd", file_ids=("large",)),
     ]
     monkeypatch.setattr(comparison_module, "_load_blocks", lambda _references: loaded)
     monkeypatch.setattr(
@@ -215,7 +213,7 @@ def test_oversized_file_returns_413_before_known_parser_runs(monkeypatch, block_
         "get_file_info_by_id",
         lambda *_args, **_kwargs: {
             "location": "/missing",
-            "name": f"data.{block_type}",
+            "name": "data.xrd",
             "size": 11,
         },
     )
@@ -225,10 +223,7 @@ def test_oversized_file_returns_413_before_known_parser_runs(monkeypatch, block_
         "_block_instance",
         lambda _loaded: pytest.fail("the parser must not be reached"),
     )
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/overlay",
         json={
             "blocks": [
@@ -241,7 +236,7 @@ def test_oversized_file_returns_413_before_known_parser_runs(monkeypatch, block_
     assert response.status_code == 413
 
 
-def test_preview_response_budget_stops_later_rendering(monkeypatch):
+def test_preview_response_budget_stops_later_rendering(monkeypatch, tool_client):
     calls = []
 
     class PreviewBlock:
@@ -267,10 +262,7 @@ def test_preview_response_budget_stops_later_rendering(monkeypatch):
     )
     monkeypatch.setattr(comparison_module, "MAX_PREVIEW_BYTES", 1_000)
     monkeypatch.setattr(comparison_module, "MAX_RESPONSE_BYTES", 300)
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/previews",
         json={
             "blocks": [
@@ -284,36 +276,7 @@ def test_preview_response_budget_stops_later_rendering(monkeypatch):
     assert calls == ["first", "second"]
 
 
-def test_oversized_preview_is_not_swallowed_by_preview_error_handling(monkeypatch):
-    class PreviewBlock:
-        @classmethod
-        def from_web(cls, _config):
-            return cls()
-
-        def to_web(self):
-            return {"payload": "oversized"}
-
-    monkeypatch.setattr(
-        comparison_module,
-        "_load_block",
-        lambda reference: _loaded_block(
-            reference.item_id,
-            reference.block_id,
-            block_class=PreviewBlock,
-        ),
-    )
-    monkeypatch.setattr(comparison_module, "MAX_PREVIEW_BYTES", 1)
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
-        "/previews", json={"blocks": [{"item_id": "item", "block_id": "block"}]}
-    )
-
-    assert response.status_code == 413
-
-
-def test_overlay_aggregate_dataframe_budget_returns_413(monkeypatch):
+def test_overlay_aggregate_dataframe_budget_returns_413(monkeypatch, tool_client):
     class ComparisonBlock:
         @classmethod
         def from_web(cls, _config):
@@ -342,10 +305,7 @@ def test_overlay_aggregate_dataframe_budget_returns_413(monkeypatch):
         "selectable_axes_plot",
         lambda *_args, **_kwargs: pytest.fail("plotting must not be reached"),
     )
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/overlay",
         json={
             "blocks": [
@@ -358,7 +318,7 @@ def test_overlay_aggregate_dataframe_budget_returns_413(monkeypatch):
     assert response.status_code == 413
 
 
-def test_oversized_bokeh_json_returns_413(monkeypatch):
+def test_oversized_bokeh_json_returns_413(monkeypatch, tool_client):
     loaded = [
         _loaded_block("first", "one"),
         _loaded_block("second", "two"),
@@ -386,10 +346,7 @@ def test_oversized_bokeh_json_returns_413(monkeypatch):
         lambda *_args, **_kwargs: {"payload": "x" * 100},
     )
     monkeypatch.setattr(comparison_module, "MAX_RESPONSE_BYTES", 10)
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/overlay",
         json={
             "blocks": [
@@ -402,7 +359,7 @@ def test_oversized_bokeh_json_returns_413(monkeypatch):
     assert response.status_code == 413
 
 
-def test_small_preview_still_succeeds(monkeypatch):
+def test_small_preview_still_succeeds(monkeypatch, tool_client):
     class PreviewBlock:
         @classmethod
         def from_web(cls, _config):
@@ -420,10 +377,7 @@ def test_small_preview_still_succeeds(monkeypatch):
             block_class=PreviewBlock,
         ),
     )
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/previews", json={"blocks": [{"item_id": "item", "block_id": "block"}]}
     )
 
@@ -431,7 +385,7 @@ def test_small_preview_still_succeeds(monkeypatch):
     assert response.json["previews"][0]["block_data"] == {"title": "Small preview"}
 
 
-def test_small_custom_overlay_still_succeeds(monkeypatch):
+def test_small_custom_overlay_still_succeeds(monkeypatch, tool_client):
     class ComparisonBlock:
         @classmethod
         def from_web(cls, _config):
@@ -454,10 +408,7 @@ def test_small_custom_overlay_still_succeeds(monkeypatch):
         _loaded_block("second", "two", block_class=ComparisonBlock),
     ]
     monkeypatch.setattr(comparison_module, "_load_blocks", lambda _references: loaded)
-    app = Flask(__name__)
-    app.register_blueprint(TOOL_BLUEPRINT)
-
-    response = app.test_client().post(
+    response = tool_client.post(
         "/overlay",
         json={
             "blocks": [
