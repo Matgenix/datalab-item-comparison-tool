@@ -59,6 +59,25 @@ administrators must review the source, dependencies, frontend lockfile,
 compiled bundle, maintainers, and release provenance before every installation
 or upgrade.
 
+## Resource limits
+
+Comparison requests return HTTP 413 when they exceed any fixed server-side
+budget:
+
+- 20 selected blocks and 40 overlay series;
+- 100 attached files, 25 MiB per file, and 100 MiB across the request;
+- 2,000,000 DataFrame cells and 64 MiB of estimated deep DataFrame memory;
+- 2 MiB per generated preview and 10 MiB for the serialized response.
+
+The server conservatively preflights every file attached to a selected item,
+even when a particular block may not read every attachment. Consequently, an
+item with an oversized attachment cannot be previewed or overlaid through this
+tool. Block authors implementing `get_comparison_data()` must return bounded
+DataFrames within the cell and memory limits.
+
+Reverse-proxy rate limiting is useful optional operational hardening, but does
+not replace these per-request limits.
+
 See [INSTALL.md](INSTALL.md) for native and Docker Compose development
 installation and frontend build instructions.
 

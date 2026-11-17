@@ -10,7 +10,7 @@ from typing import Any
 
 import bokeh.embed
 import pandas as pd
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from pydatalab.apps import BLOCK_TYPES
 from pydatalab.blocks.base import DataBlock
@@ -19,12 +19,18 @@ from pydatalab.file_utils import get_file_info_by_id
 from pydatalab.logger import LOGGER
 from pydatalab.mongo import flask_mongo
 from pydatalab.permissions import get_default_permissions, read_only_permissions
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 TOOL_ID = "item-comparison"
 MAX_BLOCKS = 20
 MAX_SERIES = 40
-MAX_DATA_POINTS = 2_000_000
+MAX_INPUT_FILE_BYTES = 25 * 1024 * 1024
+MAX_INPUT_FILES = 100
+MAX_TOTAL_INPUT_BYTES = 100 * 1024 * 1024
+MAX_DATA_CELLS = 2_000_000
+MAX_DATAFRAME_BYTES = 64 * 1024 * 1024
+MAX_PREVIEW_BYTES = 2 * 1024 * 1024
+MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 
 TOOL_BLUEPRINT = Blueprint("datalab_item_comparison_tool", __name__)
 FRONTEND_DIRECTORY = Path(__file__).parent / "static" / "frontend"
@@ -111,7 +117,116 @@ class ComparisonData:
     y_options: list[str] | None = None
 
 
-ComparisonAdapter = Callable[[LoadedBlock, DataBlock], ComparisonData | None]
+ComparisonAdapter = Callable[[LoadedBlock, DataBlock, "_RequestBudget"], ComparisonData | None]
+
+
+@dataclass
+class _RequestBudget:
+    """Track input, dataframe, and serialized-output budgets for one request."""
+
+    files: dict[str, dict[str, Any]]
+    total_file_bytes: int = 0
+    total_data_cells: int = 0
+    total_dataframe_bytes: int = 0
+    total_preview_bytes: int = 0
+    response_bytes: int = 0
+
+    @classmethod
+    def preflight(cls, loaded_blocks: list[LoadedBlock]) -> "_RequestBudget":
+        file_ids: dict[str, Any] = {}
+        for loaded in loaded_blocks:
+            for file_id in loaded.item_file_ids:
+                file_ids.setdefault(str(file_id), file_id)
+
+        if len(file_ids) > MAX_INPUT_FILES:
+            raise RequestEntityTooLarge(
+                f"A comparison may use at most {MAX_INPUT_FILES} attached files."
+            )
+
+        budget = cls(files={})
+        for key, file_id in file_ids.items():
+            try:
+                file_info = get_file_info_by_id(file_id, update_if_live=False)
+            except (OSError, TypeError, ValueError) as exc:
+                raise RequestEntityTooLarge(
+                    "An attached comparison file has no usable metadata."
+                ) from exc
+
+            file_bytes = _file_size(file_info)
+            if file_bytes > MAX_INPUT_FILE_BYTES:
+                raise RequestEntityTooLarge(
+                    f"Each attached comparison file must be at most {MAX_INPUT_FILE_BYTES:,} bytes."
+                )
+            if budget.total_file_bytes + file_bytes > MAX_TOTAL_INPUT_BYTES:
+                raise RequestEntityTooLarge(
+                    f"Attached comparison files may total at most {MAX_TOTAL_INPUT_BYTES:,} bytes."
+                )
+
+            budget.files[key] = file_info
+            budget.total_file_bytes += file_bytes
+
+        return budget
+
+    def file_info(self, loaded: LoadedBlock, file_id: Any) -> dict[str, Any]:
+        _require_attached_file(loaded, file_id)
+        try:
+            return self.files[str(file_id)]
+        except KeyError as exc:
+            raise RequestEntityTooLarge(
+                "An attached comparison file was not included in the input preflight."
+            ) from exc
+
+    def add_dataframe(self, dataframe: pd.DataFrame) -> None:
+        cells = int(dataframe.size)
+        memory_bytes = int(dataframe.memory_usage(index=True, deep=True).sum())
+        if self.total_data_cells + cells > MAX_DATA_CELLS:
+            raise RequestEntityTooLarge(
+                f"Comparison data may contain at most {MAX_DATA_CELLS:,} cells."
+            )
+        if self.total_dataframe_bytes + memory_bytes > MAX_DATAFRAME_BYTES:
+            raise RequestEntityTooLarge(
+                f"Comparison data may use at most {MAX_DATAFRAME_BYTES:,} bytes of memory."
+            )
+        self.total_data_cells += cells
+        self.total_dataframe_bytes += memory_bytes
+
+    def check_preview(self, block_data: Any) -> None:
+        preview_bytes = _serialized_size(block_data)
+        if preview_bytes > MAX_PREVIEW_BYTES:
+            raise RequestEntityTooLarge(
+                f"Each comparison preview must be at most {MAX_PREVIEW_BYTES:,} bytes."
+            )
+        self.total_preview_bytes += preview_bytes
+
+    def check_response(self, payload: Any) -> None:
+        self.response_bytes = _serialized_size(payload)
+        if self.response_bytes > MAX_RESPONSE_BYTES:
+            raise RequestEntityTooLarge(
+                f"A comparison response must be at most {MAX_RESPONSE_BYTES:,} bytes."
+            )
+
+
+def _file_size(file_info: dict[str, Any]) -> int:
+    location = file_info.get("location")
+    if isinstance(location, str) and location:
+        try:
+            path = Path(location)
+            if path.is_file():
+                size = path.stat().st_size
+                if size < 0:
+                    raise RequestEntityTooLarge("An attached comparison file has an invalid size.")
+                return size
+        except (OSError, ValueError) as exc:
+            raise RequestEntityTooLarge("An attached comparison file has no usable size.") from exc
+
+    stored_size = file_info.get("size")
+    if isinstance(stored_size, bool) or not isinstance(stored_size, int) or stored_size < 0:
+        raise RequestEntityTooLarge("An attached comparison file has no usable size.")
+    return stored_size
+
+
+def _serialized_size(value: Any) -> int:
+    return len(current_app.json.dumps(value).encode("utf-8"))
 
 
 def _reject_duplicate_references(references: list[BlockReference]) -> None:
@@ -219,7 +334,8 @@ def _coerce_axis_options(data: Any, name: str, *, optional: bool = False) -> lis
     return options
 
 
-def _coerce_comparison_data(data: Any) -> ComparisonData:
+def _coerce_comparison_data(data: Any, budget: _RequestBudget | None = None) -> ComparisonData:
+    budget = budget or _RequestBudget(files={})
     raw_series = _comparison_field(data, "series")
     x_options = _coerce_axis_options(data, "x_options")
     x_default = _comparison_field(data, "x_default")
@@ -241,7 +357,6 @@ def _coerce_comparison_data(data: Any) -> ComparisonData:
     y_default = y_default.strip()
 
     normalized_series: list[tuple[str | None, pd.DataFrame]] = []
-    total_points = 0
     for entry in raw_series:
         if not isinstance(entry, (list, tuple)) or len(entry) != 2:
             raise ValueError("each comparison series must be a (label, dataframe) pair")
@@ -250,11 +365,9 @@ def _coerce_comparison_data(data: Any) -> ComparisonData:
             raise ValueError("comparison series labels must be strings or null")
         if not isinstance(dataframe, pd.DataFrame) or dataframe.empty:
             raise ValueError("comparison series must contain non-empty pandas dataframes")
-        normalized_series.append((sublabel, dataframe.copy()))
-        total_points += len(dataframe)
+        budget.add_dataframe(dataframe)
+        normalized_series.append((sublabel, dataframe))
 
-    if total_points > MAX_DATA_POINTS:
-        raise ValueError(f"comparison data may contain at most {MAX_DATA_POINTS:,} data points")
     if x_default not in x_options:
         raise ValueError("the default x-axis must be included in x_options")
     if y_options is not None and y_default not in y_options:
@@ -287,22 +400,20 @@ def _comparison_signature(data: ComparisonData) -> tuple[Any, ...]:
     )
 
 
-def _xrd_comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
+def _xrd_comparison_data(
+    loaded: LoadedBlock, block: DataBlock, budget: _RequestBudget
+) -> ComparisonData | None:
     file_id = block.data.get("file_id")
     locations: list[tuple[str | None, str]] = []
     if file_id:
-        _require_attached_file(loaded, file_id)
-        file_info = get_file_info_by_id(file_id, update_if_live=False)
+        file_info = budget.file_info(loaded, file_id)
         locations.append((None, file_info["location"]))
     else:
         accepted_extensions = tuple(
             extension.lower() for extension in block.accepted_file_extensions
         )
         for attached_file_id in loaded.item_file_ids:
-            try:
-                file_info = get_file_info_by_id(attached_file_id, update_if_live=False)
-            except OSError:
-                continue
+            file_info = budget.file_info(loaded, attached_file_id)
             if file_info["name"].lower().endswith(accepted_extensions):
                 locations.append((file_info["name"], file_info["location"]))
                 if len(locations) > MAX_SERIES:
@@ -329,13 +440,14 @@ def _xrd_comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonDat
     )
 
 
-def _raman_comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
+def _raman_comparison_data(
+    loaded: LoadedBlock, block: DataBlock, budget: _RequestBudget
+) -> ComparisonData | None:
     file_id = block.data.get("file_id")
     if not file_id:
         return None
 
-    _require_attached_file(loaded, file_id)
-    file_info = get_file_info_by_id(file_id, update_if_live=False)
+    file_info = budget.file_info(loaded, file_id)
     dataframe, metadata, y_options = block.load(file_info["location"])
     wavenumber_unit = metadata.get("wavenumber_unit", "Unknown unit")
     if wavenumber_unit.startswith("1/"):
@@ -363,11 +475,13 @@ def _require_attached_file(loaded: LoadedBlock, file_id: Any) -> None:
         raise BadRequest(f"File {file_id!r} is not attached to item {loaded.reference.item_id!r}.")
 
 
-def _comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | None:
+def _comparison_data(
+    loaded: LoadedBlock, block: DataBlock, budget: _RequestBudget
+) -> ComparisonData | None:
     if _has_comparison_hook(loaded.block_class):
         data = block.get_comparison_data()
         if data is not None:
-            return _coerce_comparison_data(data)
+            return _coerce_comparison_data(data, budget)
 
     block_type = loaded.config.get("blocktype")
     if not isinstance(block_type, str):
@@ -375,8 +489,8 @@ def _comparison_data(loaded: LoadedBlock, block: DataBlock) -> ComparisonData | 
     adapter = COMPARISON_ADAPTERS.get(block_type)
     if adapter is None:
         return None
-    data = adapter(loaded, block)
-    return None if data is None else _coerce_comparison_data(data)
+    data = adapter(loaded, block, budget)
+    return None if data is None else _coerce_comparison_data(data, budget)
 
 
 @TOOL_BLUEPRINT.get("/frontend/tool.js")
@@ -412,11 +526,50 @@ def capabilities():
 def previews():
     """Generate previews without persisting regenerated block state to the item."""
     payload = _parse_request(PreviewRequest)
-    results = []
+    loaded_or_errors: list[LoadedBlock | dict[str, Any]] = []
     for reference in payload.blocks:
         try:
             loaded = _load_block(reference)
+            loaded_or_errors.append(loaded)
+        except BadRequest as exc:
+            loaded_or_errors.append(
+                {
+                    "status": "error",
+                    "item_id": reference.item_id,
+                    "block_id": reference.block_id,
+                    "message": exc.description,
+                }
+            )
+        except Exception:
+            LOGGER.exception(
+                "Unable to load comparison preview for item %r block %r",
+                reference.item_id,
+                reference.block_id,
+            )
+            loaded_or_errors.append(
+                {
+                    "status": "error",
+                    "item_id": reference.item_id,
+                    "block_id": reference.block_id,
+                    "message": "The block preview could not be generated.",
+                }
+            )
+
+    budget = _RequestBudget.preflight(
+        [entry for entry in loaded_or_errors if isinstance(entry, LoadedBlock)]
+    )
+    results = []
+    for entry in loaded_or_errors:
+        if isinstance(entry, dict):
+            results.append(entry)
+            budget.check_response({"previews": results})
+            continue
+
+        loaded = entry
+        reference = loaded.reference
+        try:
             block_data = _block_instance(loaded).to_web()
+            budget.check_preview(block_data)
             results.append(
                 {
                     "status": "success",
@@ -425,6 +578,9 @@ def previews():
                     "block_data": block_data,
                 }
             )
+            budget.check_response({"previews": results})
+        except RequestEntityTooLarge:
+            raise
         except BadRequest as exc:
             results.append(
                 {
@@ -434,6 +590,7 @@ def previews():
                     "message": exc.description,
                 }
             )
+            budget.check_response({"previews": results})
         except Exception:
             LOGGER.exception(
                 "Unable to render comparison preview for item %r block %r",
@@ -448,6 +605,7 @@ def previews():
                     "message": "The block preview could not be generated.",
                 }
             )
+            budget.check_response({"previews": results})
 
     response = jsonify({"previews": results})
     response.headers["Cache-Control"] = "no-store"
@@ -460,6 +618,7 @@ def overlay():
     """Overlay comparable data from two or more permission-checked blocks."""
     payload = _parse_request(OverlayRequest)
     loaded_blocks = _load_blocks(payload.blocks)
+    budget = _RequestBudget.preflight(loaded_blocks)
     block_types = {loaded.config.get("blocktype") for loaded in loaded_blocks}
     if len(block_types) != 1:
         raise BadRequest("All blocks in an overlay must have the same block type.")
@@ -473,10 +632,9 @@ def overlay():
     labelled_dataframes: dict[str, pd.DataFrame] = {}
     axis_signature = None
     comparison = None
-    total_points = 0
     try:
         for loaded in loaded_blocks:
-            data = _comparison_data(loaded, _block_instance(loaded))
+            data = _comparison_data(loaded, _block_instance(loaded), budget)
             if data is None:
                 raise BadRequest(
                     f"No comparable data was found for block {loaded.reference.block_id!r}."
@@ -498,13 +656,10 @@ def overlay():
                     suffix += 1
                     unique_label = f"{label} ({suffix})"
                 labelled_dataframes[unique_label] = dataframe
-                total_points += len(dataframe)
                 if len(labelled_dataframes) > MAX_SERIES:
                     raise BadRequest(f"An overlay may contain at most {MAX_SERIES} data series.")
-                if total_points > MAX_DATA_POINTS:
-                    raise BadRequest(
-                        f"An overlay may contain at most {MAX_DATA_POINTS:,} data points."
-                    )
+    except RequestEntityTooLarge:
+        raise
     except BadRequest:
         raise
     except Exception:
@@ -530,11 +685,11 @@ def overlay():
         LOGGER.exception("Unable to plot %r block comparison data", block_type)
         raise BadRequest("The selected block data could not be plotted.") from None
 
-    response = jsonify(
-        {
-            "status": "success",
-            "bokeh_plot_data": plot_data,
-        }
-    )
+    response_payload = {
+        "status": "success",
+        "bokeh_plot_data": plot_data,
+    }
+    budget.check_response(response_payload)
+    response = jsonify(response_payload)
     response.headers["Cache-Control"] = "no-store"
     return response
